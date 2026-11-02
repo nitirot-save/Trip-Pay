@@ -1,0 +1,6 @@
+{
+  "name": "TripSplit - หารค่าทริปเพื่อน & เคลียร์บิล",
+  "description": "เว็บคำนวณและหารค่าใช้จ่ายทริปสำหรับเพื่อนๆ รองรับหารเท่ากัน เลือกรายคน และระบุยอดรายคน พร้อมเคลียร์ยอดสุทธิและส่งสรุปเข้า LINE (GitLab Ready)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

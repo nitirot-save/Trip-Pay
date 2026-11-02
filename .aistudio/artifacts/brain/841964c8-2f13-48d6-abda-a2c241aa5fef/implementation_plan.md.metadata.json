@@ -1,0 +1,6 @@
+{
+  "summary":  "แผนการพัฒนาเว็บแอปพลิเคชัน หารค่าทริปเพื่อน (Trip Expense & Bill Splitter) ที่รองรับการ deploy บน GitLab Pages พร้อมระบบคำนวณเคลียร์หนี้สุทธิ (Settlement) และฟังก์ชันคัดลอกส่ง LINE",
+  "updatedAt":  "2026-11-02T03:41:26.263680145Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

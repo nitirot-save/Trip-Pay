@@ -1,0 +1,30 @@
+# GitLab CI/CD Pipeline for deploying TripSplit to GitLab Pages
+# Place this file at the root of your GitLab repository (.gitlab-ci.yml)
+
+image: node:20
+
+# Cache node_modules across pipeline runs for faster builds
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm/
+    - node_modules/
+
+pages:
+  stage: deploy
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+  script:
+    # Build the Vite application into the 'dist' directory
+    - npm run build
+    # GitLab Pages expects static website files to be inside a directory called 'public'
+    - rm -rf public
+    - mv dist public
+  artifacts:
+    paths:
+      - public
+  rules:
+    # Automatically triggers on push to the default branch (main or master)
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
