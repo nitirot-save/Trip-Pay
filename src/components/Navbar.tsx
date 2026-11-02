@@ -9,7 +9,10 @@ import {
   Github,
   Download,
   Calendar,
-  MapPin
+  MapPin,
+  Share2,
+  Edit2,
+  Check
 } from 'lucide-react';
 import { Trip } from '../types';
 
@@ -21,6 +24,9 @@ interface NavbarProps {
   onResetMock: () => void;
   onOpenGitLabGuide: () => void;
   onExportJson: () => void;
+  onOpenEditTrip: () => void;
+  onShareTrip: () => void;
+  copiedShareLink: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,6 +37,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetMock,
   onOpenGitLabGuide,
   onExportJson,
+  onOpenEditTrip,
+  onShareTrip,
+  copiedShareLink,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
@@ -48,16 +57,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap">
                   TripSplit
                 </span>
-                <span className="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md whitespace-nowrap">
-                  GitLab Ready
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md whitespace-nowrap">
+                  <Check className="w-3 h-3" />
+                  <span>บันทึกแล้ว</span>
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
-                <span className="truncate font-medium text-slate-700">{trip.title}</span>
+                <span className="truncate font-semibold text-slate-800">{trip.title}</span>
+                <button
+                  onClick={onOpenEditTrip}
+                  title="คลิกเพื่อแก้ไขชื่อทริป วันที่ หรือสกุลเงิน"
+                  className="text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer transition-colors"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
                 {trip.dates && (
                   <>
                     <span aria-hidden="true" className="text-slate-300">·</span>
-                    <span className="hidden md:inline flex items-center gap-1">
+                    <span className="hidden md:inline flex items-center gap-1 text-slate-500">
                       <Calendar className="w-3 h-3 text-slate-400 inline" />
                       {trip.dates}
                     </span>
@@ -112,6 +129,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Zone 3: Primary Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Share Trip Link Button */}
+            <button
+              onClick={onShareTrip}
+              title="คัดลอกลิงก์ทริปพร้อมข้อมูลส่งให้เพื่อนเปิดได้ทันที"
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap ${
+                copiedShareLink
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+              }`}
+            >
+              {copiedShareLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>คัดลอกลิงก์แล้ว!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="hidden sm:inline">แชร์ทริปให้เพื่อน</span>
+                  <span className="sm:hidden">แชร์</span>
+                </>
+              )}
+            </button>
+
             {/* GitHub & GitLab Deploy Guide Button */}
             <button
               onClick={onOpenGitLabGuide}

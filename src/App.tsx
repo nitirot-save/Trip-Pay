@@ -13,6 +13,8 @@ import { MembersTab } from './components/MembersTab';
 import { ExpenseModal } from './components/ExpenseModal';
 import { MemberDetailModal } from './components/MemberDetailModal';
 import { DeployGuideModal } from './components/DeployGuideModal';
+import { TripEditModal } from './components/TripEditModal';
+import { encodeTripToUrl } from './utils/storage';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 
 export default function App() {
@@ -25,11 +27,21 @@ export default function App() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isGitLabGuideOpen, setIsGitLabGuideOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isTripEditModalOpen, setIsTripEditModalOpen] = useState(false);
+  const [copiedShareLink, setCopiedShareLink] = useState(false);
 
   // Save to localStorage whenever trip changes
   useEffect(() => {
     saveTrip(trip);
   }, [trip]);
+
+  // Handle Share Trip Link (encodes trip into URL hash and copies)
+  const handleShareTrip = () => {
+    const shareUrl = encodeTripToUrl(trip);
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedShareLink(true);
+    setTimeout(() => setCopiedShareLink(false), 2500);
+  };
 
   // Handle Save Expense (Add or Edit)
   const handleSaveExpense = (savedExp: Expense) => {
@@ -64,6 +76,14 @@ export default function App() {
     setTrip(prev => ({
       ...prev,
       members: [...prev.members, newMember],
+    }));
+  };
+
+  // Handle Update Member
+  const handleUpdateMember = (updatedMember: Member) => {
+    setTrip(prev => ({
+      ...prev,
+      members: prev.members.map(m => (m.id === updatedMember.id ? updatedMember : m)),
     }));
   };
 
@@ -110,6 +130,9 @@ export default function App() {
         onResetMock={() => setIsResetConfirmOpen(true)}
         onOpenGitLabGuide={() => setIsGitLabGuideOpen(true)}
         onExportJson={() => exportTripToJson(trip)}
+        onOpenEditTrip={() => setIsTripEditModalOpen(true)}
+        onShareTrip={handleShareTrip}
+        copiedShareLink={copiedShareLink}
       />
 
       {/* Main Content Area */}
@@ -141,6 +164,7 @@ export default function App() {
           <MembersTab
             trip={trip}
             onAddMember={handleAddMember}
+            onUpdateMember={handleUpdateMember}
             onDeleteMember={handleDeleteMember}
             onSelectMember={m => setSelectedMember(m)}
           />
@@ -190,6 +214,13 @@ export default function App() {
       <DeployGuideModal
         isOpen={isGitLabGuideOpen}
         onClose={() => setIsGitLabGuideOpen(false)}
+      />
+
+      <TripEditModal
+        isOpen={isTripEditModalOpen}
+        onClose={() => setIsTripEditModalOpen(false)}
+        trip={trip}
+        onSave={updated => setTrip(updated)}
       />
 
       {/* Reset Mockup Confirmation Modal */}

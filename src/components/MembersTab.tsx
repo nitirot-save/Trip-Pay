@@ -7,7 +7,8 @@ import {
   CreditCard, 
   Smartphone, 
   Wallet,
-  AlertCircle
+  AlertCircle,
+  Edit2
 } from 'lucide-react';
 import { Trip, Member } from '../types';
 import { calculateBalances, formatCurrency } from '../utils/calculations';
@@ -15,6 +16,7 @@ import { calculateBalances, formatCurrency } from '../utils/calculations';
 interface MembersTabProps {
   trip: Trip;
   onAddMember: (member: Member) => void;
+  onUpdateMember: (member: Member) => void;
   onDeleteMember: (memberId: string) => void;
   onSelectMember: (member: Member) => void;
 }
@@ -34,10 +36,12 @@ const AVATAR_COLORS = [
 export const MembersTab: React.FC<MembersTabProps> = ({
   trip,
   onAddMember,
+  onUpdateMember,
   onDeleteMember,
   onSelectMember,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [promptpay, setPromptpay] = useState('');
@@ -49,6 +53,28 @@ export const MembersTab: React.FC<MembersTabProps> = ({
 
   const balances = calculateBalances(trip);
   const balanceMap = new Map(balances.map(b => [b.memberId, b]));
+
+  const startEdit = (m: Member) => {
+    setEditingMemberId(m.id);
+    setName(m.name);
+    setNickname(m.nickname || '');
+    setPromptpay(m.promptpay || '');
+    setBankName(m.bankName || '');
+    setBankAccount(m.bankAccount || '');
+    setSelectedColor(m.avatarColor);
+    setIsAdding(true);
+  };
+
+  const startAdd = () => {
+    setEditingMemberId(null);
+    setName('');
+    setNickname('');
+    setPromptpay('');
+    setBankName('');
+    setBankAccount('');
+    setSelectedColor(AVATAR_COLORS[trip.members.length % AVATAR_COLORS.length]);
+    setIsAdding(!isAdding);
+  };
 
   const handleCopyPromptpay = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -63,23 +89,37 @@ export const MembersTab: React.FC<MembersTabProps> = ({
       return;
     }
 
-    const newMember: Member = {
-      id: `m-${Date.now()}`,
-      name: name.trim(),
-      nickname: nickname.trim() || undefined,
-      avatarColor: selectedColor,
-      promptpay: promptpay.trim() || undefined,
-      bankName: bankName.trim() || undefined,
-      bankAccount: bankAccount.trim() || undefined,
-    };
+    if (editingMemberId) {
+      const updated: Member = {
+        id: editingMemberId,
+        name: name.trim(),
+        nickname: nickname.trim() || undefined,
+        avatarColor: selectedColor,
+        promptpay: promptpay.trim() || undefined,
+        bankName: bankName.trim() || undefined,
+        bankAccount: bankAccount.trim() || undefined,
+      };
+      onUpdateMember(updated);
+    } else {
+      const newMember: Member = {
+        id: `m-${Date.now()}`,
+        name: name.trim(),
+        nickname: nickname.trim() || undefined,
+        avatarColor: selectedColor,
+        promptpay: promptpay.trim() || undefined,
+        bankName: bankName.trim() || undefined,
+        bankAccount: bankAccount.trim() || undefined,
+      };
+      onAddMember(newMember);
+    }
 
-    onAddMember(newMember);
     setName('');
     setNickname('');
     setPromptpay('');
     setBankName('');
     setBankAccount('');
     setIsAdding(false);
+    setEditingMemberId(null);
     setErrorMsg(null);
   };
 
@@ -95,7 +135,7 @@ export const MembersTab: React.FC<MembersTabProps> = ({
         </div>
 
         <button
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={startAdd}
           className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-all shadow-xs cursor-pointer whitespace-nowrap"
         >
           <UserPlus className="w-4 h-4" />
@@ -103,13 +143,24 @@ export const MembersTab: React.FC<MembersTabProps> = ({
         </button>
       </div>
 
-      {/* Add Member Form (Accordion) */}
+      {/* Add / Edit Member Form (Accordion) */}
       {isAdding && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 animate-in fade-in duration-150">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-emerald-600" />
-            <span>เพิ่มเพื่อนร่วมทริปใหม่</span>
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-emerald-600" />
+              <span>{editingMemberId ? 'แก้ไขข้อมูลเพื่อน' : 'เพิ่มเพื่อนร่วมทริปใหม่'}</span>
+            </h3>
+            {editingMemberId && (
+              <button
+                type="button"
+                onClick={() => { setIsAdding(false); setEditingMemberId(null); }}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                ยกเลิกการแก้ไข
+              </button>
+            )}
+          </div>
 
           {errorMsg && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
@@ -250,15 +301,24 @@ export const MembersTab: React.FC<MembersTabProps> = ({
                     </div>
                   </div>
 
-                  {trip.members.length > 2 && (
+                  <div className="flex items-center gap-1">
                     <button
-                      onClick={() => onDeleteMember(member.id)}
-                      className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                      title="ลบเพื่อนคนนี้ออกจากทริป"
+                      onClick={() => startEdit(member)}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                      title="แก้ไขข้อมูลเพื่อนคนนี้"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4" />
                     </button>
-                  )}
+                    {trip.members.length > 2 && (
+                      <button
+                        onClick={() => onDeleteMember(member.id)}
+                        className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="ลบเพื่อนคนนี้ออกจากทริป"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Financial Summary */}
