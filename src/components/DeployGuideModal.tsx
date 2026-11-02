@@ -34,14 +34,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build static site with Vite
         run: npm run build
@@ -61,19 +60,10 @@ jobs:
 
 const GITLAB_CI_CONTENT = `image: node:20
 
-cache:
-  key:
-    files:
-      - package-lock.json
-  paths:
-    - .npm/
-    - node_modules/
-
 pages:
   stage: deploy
-  before_script:
-    - npm ci --cache .npm --prefer-offline
   script:
+    - npm install --legacy-peer-deps
     - npm run build
     - rm -rf public
     - mv dist public
