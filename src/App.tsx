@@ -29,6 +29,12 @@ export default function App() {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isTripEditModalOpen, setIsTripEditModalOpen] = useState(false);
   const [copiedShareLink, setCopiedShareLink] = useState(false);
+  const [sharedNotice, setSharedNotice] = useState<string | null>(() => {
+    if (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('trip=')) {
+      return '🎉 โหลดข้อมูลทริปจากลิงก์ที่แชร์มาเรียบร้อยแล้ว! บันทึกลงในเครื่องของคุณแล้ว คุณสามารถเพิ่ม/แก้บิลต่อได้เลย (ข้อมูลไม่หายแม้จะกดรีเฟรช)';
+    }
+    return null;
+  });
 
   // Save to localStorage whenever trip changes
   useEffect(() => {
@@ -53,10 +59,12 @@ export default function App() {
       } else {
         updatedExpenses = [savedExp, ...prev.expenses];
       }
-      return {
+      const nextTrip = {
         ...prev,
         expenses: updatedExpenses,
       };
+      saveTrip(nextTrip);
+      return nextTrip;
     });
     setEditingExpense(null);
   };
@@ -64,27 +72,39 @@ export default function App() {
   // Handle Delete Expense
   const handleDeleteExpense = (expenseId: string) => {
     if (window.confirm('คุณต้องการลบรายการค่าใช้จ่ายนี้ใช่หรือไม่?')) {
-      setTrip(prev => ({
-        ...prev,
-        expenses: prev.expenses.filter(e => e.id !== expenseId),
-      }));
+      setTrip(prev => {
+        const nextTrip = {
+          ...prev,
+          expenses: prev.expenses.filter(e => e.id !== expenseId),
+        };
+        saveTrip(nextTrip);
+        return nextTrip;
+      });
     }
   };
 
   // Handle Add Member
   const handleAddMember = (newMember: Member) => {
-    setTrip(prev => ({
-      ...prev,
-      members: [...prev.members, newMember],
-    }));
+    setTrip(prev => {
+      const nextTrip = {
+        ...prev,
+        members: [...prev.members, newMember],
+      };
+      saveTrip(nextTrip);
+      return nextTrip;
+    });
   };
 
   // Handle Update Member
   const handleUpdateMember = (updatedMember: Member) => {
-    setTrip(prev => ({
-      ...prev,
-      members: prev.members.map(m => (m.id === updatedMember.id ? updatedMember : m)),
-    }));
+    setTrip(prev => {
+      const nextTrip = {
+        ...prev,
+        members: prev.members.map(m => (m.id === updatedMember.id ? updatedMember : m)),
+      };
+      saveTrip(nextTrip);
+      return nextTrip;
+    });
   };
 
   // Handle Delete Member
@@ -97,15 +117,19 @@ export default function App() {
     }
 
     if (window.confirm('คุณต้องการลบเพื่อนคนนี้ออกจากทริปใช่หรือไม่?')) {
-      setTrip(prev => ({
-        ...prev,
-        members: prev.members.filter(m => m.id !== memberId),
-        // Also remove from any participant lists
-        expenses: prev.expenses.map(e => ({
-          ...e,
-          participantIds: e.participantIds.filter(id => id !== memberId),
-        })),
-      }));
+      setTrip(prev => {
+        const nextTrip = {
+          ...prev,
+          members: prev.members.filter(m => m.id !== memberId),
+          // Also remove from any participant lists
+          expenses: prev.expenses.map(e => ({
+            ...e,
+            participantIds: e.participantIds.filter(id => id !== memberId),
+          })),
+        };
+        saveTrip(nextTrip);
+        return nextTrip;
+      });
     }
   };
 
@@ -136,7 +160,22 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* Shared Trip Notification Banner */}
+        {sharedNotice && (
+          <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-900 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🎉</span>
+              <span className="font-medium">{sharedNotice}</span>
+            </div>
+            <button
+              onClick={() => setSharedNotice(null)}
+              className="text-emerald-700 hover:text-emerald-900 font-semibold px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors shrink-0"
+            >
+              เข้าใจแล้ว
+            </button>
+          </div>
+        )}
         {activeTab === 'overview' && (
           <OverviewTab
             trip={trip}
@@ -220,7 +259,10 @@ export default function App() {
         isOpen={isTripEditModalOpen}
         onClose={() => setIsTripEditModalOpen(false)}
         trip={trip}
-        onSave={updated => setTrip(updated)}
+        onSave={updated => {
+          saveTrip(updated);
+          setTrip(updated);
+        }}
       />
 
       {/* Reset Mockup Confirmation Modal */}
